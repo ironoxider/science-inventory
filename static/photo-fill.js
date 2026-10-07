@@ -17,6 +17,14 @@
   const conflictsEl = panel.querySelector(".pf-conflicts");
 
   const MAX_PHOTOS = 4;
+  // Which form fields a scanned barcode can be copied into: [[field name, button label], ...]
+  let targets = [["serial_number", "Serial #"], ["model_number", "Model #"], ["asset_tag", "Asset tag"]];
+  try {
+    if (panel.dataset.targets) targets = JSON.parse(panel.dataset.targets);
+  } catch (e) {
+    /* keep the defaults */
+  }
+  targets = targets.filter(function (t) { return form.elements[t[0]]; });
   const UPLOAD_MAX_EDGE = 2000; // px; keeps uploads small while labels stay legible
   const SCAN_MAX_EDGE = 2000;
 
@@ -190,7 +198,7 @@
       const code = document.createElement("code");
       code.textContent = value;
       row.appendChild(code);
-      [["serial_number", "Serial #"], ["model_number", "Model #"], ["asset_tag", "Asset tag"]].forEach(
+      targets.forEach(
         function (pair) {
           const b = document.createElement("button");
           b.type = "button";
@@ -349,6 +357,15 @@
     if (aiButton) aiButton.disabled = !photos.length;
     if (photos.length) setStatus(problem || "Scanning for barcodes…", problem ? "error" : "busy");
     await scanAll();
+    if (panel.dataset.isbn) {
+      // Book barcodes are EAN-13 ISBNs (978/979...). Put it in the ISBN box and look the book up.
+      const isbn = barcodes.map(function (b) { return b.replace(/[^0-9X]/gi, ""); })
+        .find(function (b) { return /^97[89]\d{10}$/.test(b) || /^\d{9}[\dX]$/.test(b); });
+      if (isbn) {
+        setField("isbn", isbn, true);
+        document.dispatchEvent(new CustomEvent("isbn-found", { detail: isbn }));
+      }
+    }
     if (problem) {
       setStatus(problem, "error");
     } else if (photos.length) {

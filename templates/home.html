@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>What do you want to do?</h1>
+
+{% set alerts = [] %}
+{% if ch.expired %}{% set _ = alerts.append((url_for('chemicals.index', expiry='expired', sort='expiration_date'), ch.expired ~ " chemical(s) past their expiration date")) %}{% endif %}
+{% if ch.soon %}{% set _ = alerts.append((url_for('chemicals.index', expiry='soon', sort='expiration_date'), ch.soon ~ " chemical(s) expiring in the next " ~ warn_days ~ " days")) %}{% endif %}
+{% if tb.overdue %}{% set _ = alerts.append((url_for('lending.desk', show='overdue'), tb.overdue ~ " textbook(s) overdue")) %}{% endif %}
+{% if eq.low %}{% set _ = alerts.append((url_for('equipment.index', stock='low'), eq.low ~ " equipment item(s) below their reorder level")) %}{% endif %}
+{% if alerts %}
+<div class="flash warn reminder">
+  <strong>Needs attention:</strong>
+  <ul class="alert-list">{% for link, text in alerts %}<li><a href="{{ link }}">{{ text }}</a></li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section class="home-grid">
+  <div class="home-card">
+    <h2><a href="{{ url_for('equipment.index') }}">Lab equipment</a></h2>
+    <p class="big">{{ eq.items }} <span>item{{ '' if eq.items == 1 else 's' }}, {{ eq.pieces }} pieces in total</span></p>
+    {% if eq.repair %}<p><a href="{{ url_for('equipment.index', condition='Needs Repair') }}">{{ eq.repair }} need repair or are damaged</a></p>{% endif %}
+    <div class="home-actions">
+      <a class="button" href="{{ url_for('equipment.new') }}">+ Add equipment</a>
+      <a href="{{ url_for('equipment.index') }}">Look up</a>
+    </div>
+  </div>
+
+  <div class="home-card">
+    <h2><a href="{{ url_for('textbooks.index') }}">Textbooks</a></h2>
+    <p class="big">{{ tb.copies }} <span>cop{{ 'y' if tb.copies == 1 else 'ies' }} of {{ tb.titles }} title{{ '' if tb.titles == 1 else 's' }}</span></p>
+    <p>{{ tb.available }} available · <a href="{{ url_for('lending.desk') }}">{{ tb.out }} checked out</a>{% if tb.overdue %} · <a class="expired" href="{{ url_for('lending.desk', show='overdue') }}">{{ tb.overdue }} overdue</a>{% endif %}</p>
+    <form class="home-actions" action="{{ url_for('lending.find') }}" method="get">
+      <input name="copy" placeholder="Scan or type a copy number" aria-label="Copy number" autocomplete="off">
+      <button type="submit">Check out / return</button>
+    </form>
+    <div class="home-actions">
+      <a class="button secondary-link" href="{{ url_for('textbooks.new') }}">+ Add a textbook title</a>
+    </div>
+  </div>
+
+  <div class="home-card">
+    <h2><a href="{{ url_for('chemicals.index') }}">Chemicals</a></h2>
+    <p class="big">{{ ch.items }} <span>chemical{{ '' if ch.items == 1 else 's' }} in {{ ch.containers }} container{{ '' if ch.containers == 1 else 's' }}</span></p>
+    {% if ch.expired or ch.soon %}<p>{% if ch.expired %}<a class="expired" href="{{ url_for('chemicals.index', expiry='expired') }}">{{ ch.expired }} expired</a>{% endif %}{% if ch.expired and ch.soon %} · {% endif %}{% if ch.soon %}<a class="due-soon" href="{{ url_for('chemicals.index', expiry='soon') }}">{{ ch.soon }} expiring soon</a>{% endif %}</p>{% endif %}
+    <div class="home-actions">
+      <a class="button" href="{{ url_for('chemicals.new') }}">+ Add a chemical</a>
+      <a href="{{ url_for('chemicals.index') }}">Look up</a>
+    </div>
+  </div>
+</section>
+
+<form class="filters home-search" action="{{ url_for('search') }}" method="get">
+  <input type="search" name="q" placeholder="Search everything: item, chemical, CAS #, title, ISBN, copy number, student…" aria-label="Search everything">
+  <button type="submit">Search</button>
+</form>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% set heading = ('Add ' ~ coll.singular) if new else ('Edit ' ~ coll.display(record)) %}
+{% block title %}{{ heading }} · {{ APP_NAME }}{% endblock %}
+{% macro field_input(f) -%}
+  {%- set value = record.get(f.name) -%}
+  {%- if f.type == 'textarea' -%}
+    <textarea name="{{ f.name }}" rows="3">{{ value or '' }}</textarea>
+  {%- elif f.type == 'select' -%}
+    <select name="{{ f.name }}" data-new-option="{{ f.label|lower }}">
+      {% if not f.required %}<option value="">(None)</option>{% endif %}
+      {% for c in options[f.name] %}<option {% if value == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      {% if value and value not in options[f.name] %}<option selected>{{ value }}</option>{% endif %}
+      <option value="{{ NEW_OPTION }}">+ Add new…</option>
+    </select>
+  {%- elif f.type == 'multi' -%}
+    {%- set chosen = (value or '').split(MULTI_SEP.strip())|map('trim')|list -%}
+    <span class="checks">
+      {% for c in options[f.name] %}<label class="checkbox"><input type="checkbox" name="{{ f.name }}" value="{{ c }}" {% if c in chosen %}checked{% endif %}> {{ c }}</label>{% endfor %}
+    </span>
+  {%- elif f.type == 'location' -%}
+    <select name="location_id">
+      <option value="">(None)</option>
+      {% for l in locations %}<option value="{{ l.id }}" {% if record.get('location_id') == l.id %}selected{% endif %}>{{ l.name }}</option>{% endfor %}
+    </select>
+    <input name="new_location" placeholder="…or type a new location" aria-label="New location">
+  {%- else -%}
+    <input name="{{ f.name }}"
+      {%- if f.type == 'date' %} type="date"{% elif f.type == 'int' %} type="number" step="1"{% elif f.type == 'number' %} type="number" step="any"{% elif f.type == 'url' %} type="url"{% endif %}
+      {%- if f.minimum is not none %} min="{{ f.minimum }}"{% endif %}
+      value="{{ ('%g'|format(value)) if (f.type == 'number' and value is number) else (value if value is not none else '') }}"
+      {%- if f.placeholder %} placeholder="{{ f.placeholder }}"{% endif %}
+      {%- if f.required %} required{% endif %}
+      {%- if f.mono %} class="mono" spellcheck="false"{% endif %}>
+  {%- endif -%}
+{%- endmacro %}
+{% block content %}
+<h1>{{ heading }}</h1>
+{% if errors %}<div class="flash error"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+{% if coll.photo %}
+<section id="photo-fill" class="photo-fill"
+         data-extract-url="{{ url_for('api_extract') }}"
+         data-heic-url="{{ url_for('static', filename='vendor/heic2any.min.js') }}"
+         data-targets='{{ coll.photo.targets|tojson }}'
+         {% if coll.photo.isbn %}data-isbn="1"{% endif %}>
+  <h2>Fill from photos</h2>
+  <p class="muted">
+    {% if coll.photo.isbn %}Take a photo of the barcode on the back cover; the ISBN is read and the book looked up automatically.
+    {% else %}Take or choose up to 4 photos of the label. Barcodes are read automatically{% if coll.photo.ai and ai_enabled() %}; the AI can read the printed text too{% endif %}.{% endif %}
+  </p>
+  <div class="pf-controls">
+    <label class="button secondary pf-pick">Choose / take photos
+      <input type="file" accept="image/*,.heic,.heif" multiple hidden></label>
+    {% if coll.photo.ai and ai_enabled() %}<button type="button" data-ai disabled>Read label with AI</button>{% endif %}
+  </div>
+  <div class="pf-previews"></div>
+  <p class="pf-status" role="status" aria-live="polite"></p>
+  <div class="pf-conflicts"></div>
+  <div class="pf-barcodes"></div>
+</section>
+{% endif %}
+
+<form method="post" class="device-form record-form">
+  {% for group in coll.groups %}
+  <fieldset>
+    <legend>{{ group }}</legend>
+    {% for f in coll.fields if f.group == group %}
+      <label class="{{ 'wide' if f.type in ('textarea', 'multi') }}">{{ f.label }}{% if f.required %} *{% endif %}
+        {% if f.name == 'isbn' %}
+          <span class="inline-input">{{ field_input(f) }}<button type="button" class="secondary small" data-isbn-lookup data-url="{{ url_for('api_isbn') }}">Look up</button></span>
+          <span class="isbn-status small-note" role="status"></span>
+        {% else %}{{ field_input(f) }}{% endif %}
+        {% if f.help %}<span class="small-note muted">{{ f.help }}</span>{% endif %}
+      </label>
+    {% endfor %}
+  </fieldset>
+  {% endfor %}
+  <p class="small-note muted"><a href="{{ url_for('lists') }}" target="_blank">Edit the drop-down lists</a></p>
+  <div class="actions">
+    <button type="submit">Save</button>
+    {% if new %}<button type="submit" name="add_another" value="1" class="secondary">Save &amp; add another</button>{% endif %}
+    <a href="{{ url_for(coll.key ~ '.view', record_id=record.id) if not new else url_for(coll.key ~ '.index') }}">Cancel</a>
+  </div>
+</form>
+{% if coll.photo %}
+<script src="{{ url_for('static', filename='vendor/zxing.min.js') }}"></script>
+<script src="{{ url_for('static', filename='photo-fill.js') }}"></script>
+{% endif %}
+<script src="{{ url_for('static', filename='form.js') }}"></script>
+{% if coll.form_script %}<script src="{{ url_for('static', filename=coll.form_script) }}"></script>{% endif %}
+{% endblock %}

@@ -113,3 +113,42 @@ th, td { padding: 8px 8px; }
 .device-form details { color: var(--text); }
 .device-form details summary { cursor: pointer; color: var(--accent); }
 .device-form details li { margin: 6px 0; }
+
+/* ---- Science Inventory additions ---- */
+.nav-search input { width: 190px; padding: 5px 9px; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; margin: 8px 0 20px; }
+.home-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 8px; }
+.home-card h2 { margin: 0; font-size: 1.2em; }
+.home-card h2 a { color: var(--text); text-decoration: none; }
+.home-card p { margin: 0; }
+.home-card .big { font-size: 1.8em; font-weight: 700; }
+.home-card .big span { font-size: 0.5em; font-weight: 400; color: var(--muted); }
+.home-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: auto; }
+.home-actions input { flex: 1 1 160px; width: auto; }
+.home-search input[type=search] { flex: 1 1 320px; }
+.secondary-link { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.alert-list { margin: 6px 0 0; padding-left: 20px; }
+.alert-list a { color: inherit; }
+.lend-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px;
+  margin: 12px 0 18px; max-width: 900px; }
+.lend-box.out { border-color: var(--warn); }
+.lend-box h2 { margin: 0 0 8px; font-size: 1.1em; }
+.lend-box label { display: flex; gap: 6px; align-items: center; color: var(--muted); }
+.lend-box label select, .lend-box label input { width: auto; }
+.wide-input { flex: 1 1 320px; width: auto; }
+.big-badge { font-size: 1em; padding: 4px 12px; }
+.status-available { color: var(--ok); }
+.status-checked-out { color: var(--warn); }
+.status-damaged, .status-lost { color: var(--danger); }
+.status-retired { color: var(--muted); }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.checks .checkbox { display: inline-flex; gap: 6px; align-items: center; color: var(--text); }
+.checks .checkbox input { width: auto; }
+.inline-input { display: flex; gap: 6px; }
+.inline-input input { flex: 1; }
+details.add-copies, details.edit-copy { max-width: 900px; margin: 12px 0 20px; }
+details.add-copies summary, details.edit-copy summary { cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 10px; }
+.isbn-status.success { color: var(--ok); }
+.isbn-status.error { color: var(--danger); }
+@media (max-width: 700px) { .nav-search input { width: 100%; } }

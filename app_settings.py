@@ -9,7 +9,8 @@ import time
 
 # Shown at the bottom of every page; bump it with each release so people can tell
 # which version they're running (and so the launcher can spot an older copy).
-APP_VERSION = "1.5"
+APP_NAME = "Science Inventory"
+APP_VERSION = "1.0"
 
 FROZEN = getattr(sys, "frozen", False)  # True when running as a packaged (PyInstaller) app
 
@@ -49,7 +50,7 @@ def default_data_dir():
     """Folder for the database and settings.
 
     When running from source this is the project folder. The packaged app uses
-    "Documents/Device Inventory" so the data is easy to find and back up.
+    "Documents/Science Inventory" so the data is easy to find and back up.
     """
     if os.environ.get("INVENTORY_DATA_DIR"):
         return os.environ["INVENTORY_DATA_DIR"]
@@ -57,7 +58,7 @@ def default_data_dir():
         return RESOURCE_DIR
     home = os.path.expanduser("~")
     documents = os.path.join(home, "Documents")
-    return os.path.join(documents if os.path.isdir(documents) else home, "Device Inventory")
+    return os.path.join(documents if os.path.isdir(documents) else home, APP_NAME)
 
 
 def default_db_path():

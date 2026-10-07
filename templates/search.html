@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Search · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>Results for “{{ q }}”</h1>
+{% set found = namespace(any=false) %}
+{% if loans %}{% set found.any = true %}
+<h2>Textbooks checked out to “{{ q }}”</h2>
+<ul>{% for k in loans %}<li><a href="{{ url_for('lending.copy_view', copy_id=k.copy_id) }}" class="mono">{{ k.copy_number }}</a> {{ k.title }}: {{ k.borrower }}, due {{ k.due_date or '—' }}</li>{% endfor %}</ul>
+{% endif %}
+{% for coll, rows in results if rows %}{% set found.any = true %}
+<h2>{{ coll.title }} ({{ rows|length }})</h2>
+<ul>{% for r in rows %}<li><a href="{{ url_for(coll.key ~ '.view', record_id=r.id) }}">{{ coll.display(r) }}</a>{% if r.location %} · {{ r.location }}{% endif %}</li>{% endfor %}</ul>
+{% endfor %}
+{% if not found.any %}<p class="empty">Nothing matched. Try fewer letters, or check the spelling.</p>{% endif %}
+{% endblock %}

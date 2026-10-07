@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Import textbook copies · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ url_for('textbooks.index') }}">← Textbooks</a></p>
+<h1>Import textbook copies from CSV</h1>
+{% if result %}
+  <div class="flash {{ 'error' if result.errors else 'success' }}">
+    Added {{ result.added }} copies, updated {{ result.updated }}, recorded {{ result.loans }} current loan(s){% if result.errors %}; {{ result.errors|length }} row(s) skipped:{% endif %}
+    {% if result.errors %}<ul>{% for e in result.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="inline-form">
+  <input type="file" name="file" accept=".csv,text/csv" required>
+  <button type="submit">Import</button>
+</form>
+<p>Use this to load copies you already track in a spreadsheet, one row per copy. Columns (only <code>copy_number</code> and a title or ISBN are needed):</p>
+<p><code>{{ columns|join(', ') }}</code></p>
+<ul>
+  <li>The textbook is found by ISBN, or by title and edition; if it isn't in Textbooks yet, it's added.</li>
+  <li>An existing copy number is updated, not duplicated.</li>
+  <li>If <code>borrower</code> is filled in, the copy is recorded as checked out to that person
+    (due on <code>due_date</code>, or the default due date from Settings).</li>
+  <li>Tip: <a href="{{ url_for('lending.export_copies') }}">export</a> to see the format.</li>
+</ul>
+{% endblock %}

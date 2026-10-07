@@ -1,4 +1,4 @@
-"""Start Device Inventory and open it in the web browser.
+"""Start Science Inventory and open it in the web browser.
 
 This is the entry point of the packaged (double-click) app. It can also be run
 from source with:  python launcher.py
@@ -16,8 +16,8 @@ import webbrowser
 
 import app_settings
 
-APP_NAME = "Device Inventory"
-FIRST_PORT = 5000
+APP_NAME = app_settings.APP_NAME
+FIRST_PORT = 5050
 
 
 def port_free(host, port):
@@ -33,7 +33,7 @@ def port_free(host, port):
 
 
 def running_version(port):
-    """Version of the Device Inventory answering on this port.
+    """Version of this app answering on this port.
 
     None if nothing (or something else) is there; "" for versions older than 1.4,
     which didn't report a version.
@@ -56,7 +56,9 @@ def selftest():
         from app import create_app
 
         client = create_app({"TESTING": True}).test_client()
-        for path in ["/", "/devices/new", "/locations", "/lists", "/import", "/settings",
+        for path in ["/", "/equipment/", "/equipment/new", "/chemicals/", "/chemicals/new",
+                     "/textbooks/", "/textbooks/new", "/lending", "/copies/import", "/locations",
+                     "/lists", "/settings", "/search?q=x",
                      "/static/vendor/zxing.min.js", "/static/vendor/heic2any.min.js",
                      "/static/vendor/qrcode.js",
                      "/static/photo-fill.js"]:
@@ -139,11 +141,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         code = 0
     except ModuleNotFoundError as e:
-        print(f"\nDevice Inventory can't start: the Python add-on '{e.name}' isn't installed.")
+        print(f"\n{APP_NAME} can't start: the Python add-on '{e.name}' isn't installed.")
         if os.name == "nt":
-            print('Double-click "Start Device Inventory.bat" instead; it installs everything automatically.')
+            print(f'Double-click "Start {APP_NAME}.bat" instead; it installs everything automatically.')
         else:
-            print("Run ./start.sh instead (on a Mac, double-click \"Start Device Inventory.command\");")
+            print(f"Run ./start.sh instead (on a Mac, double-click \"Start {APP_NAME}.command\");")
             print("it installs everything automatically.")
         code = 1
     except Exception:

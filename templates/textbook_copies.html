@@ -1,0 +1,43 @@
+{% set copies = textbook_copies(record.id) %}
+<h2 id="copies">Copies ({{ copies|length }})</h2>
+{% if copies %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Copy #</th><th>Status</th><th>Condition</th><th>Location</th><th>Checked out to</th><th>Due</th></tr></thead>
+  <tbody>
+  {% for c in copies %}
+    <tr>
+      <td class="mono"><a href="{{ url_for('lending.copy_view', copy_id=c.id) }}">{{ c.copy_number }}</a></td>
+      <td><span class="badge status-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span></td>
+      <td>{{ c.condition or '' }}</td>
+      <td class="wrap">{{ c.location or '' }}</td>
+      <td class="wrap">{{ c.borrower or '' }}</td>
+      <td class="{{ 'expired' if c.due_date and c.due_date < today() }}">{{ c.due_date or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}<p class="muted">No copies yet. Add them below.</p>{% endif %}
+
+<details class="add-copies" {% if not copies %}open{% endif %}>
+  <summary>Add copies</summary>
+  <form method="post" action="{{ url_for('lending.add_copies', textbook_id=record.id) }}" class="device-form">
+    <fieldset>
+      <legend>Number the new copies</legend>
+      <label>Prefix<input name="prefix" placeholder="e.g. BIO-" value="{{ (record.subject or record.title)[:3]|upper ~ '-' }}"></label>
+      <label>Start at<input name="start" type="number" min="0" value="{{ copies|length + 1 }}"></label>
+      <label>How many<input name="count" type="number" min="1" max="500" value="{{ 25 if not copies else 1 }}"></label>
+      <label>Condition
+        <select name="condition">{% for c in condition_options() %}<option {% if c == 'Good' %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      </label>
+      <label>Location
+        <select name="location_id"><option value="">(None)</option>{% for l in location_options() %}<option value="{{ l.id }}">{{ l.name }}</option>{% endfor %}</select>
+        <input name="new_location" placeholder="…or type a new location" aria-label="New location">
+      </label>
+      <p class="wide small-note muted">Copies are numbered like BIO-001, BIO-002, … Write or label the number inside each book's cover.
+        Numbers already in use are skipped.</p>
+    </fieldset>
+    <div class="actions"><button type="submit">Add copies</button></div>
+  </form>
+</details>

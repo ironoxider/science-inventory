@@ -8,7 +8,9 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import photo_extract  # noqa: E402
-from app import DEFAULT_CATEGORIES as CATEGORIES, create_app  # noqa: E402
+from app import create_app  # noqa: E402
+
+CATEGORIES = ["Laptop", "Microscopes & Optics", "Measurement"]
 
 
 class FakeClient:
@@ -84,7 +86,7 @@ def test_api_extract_not_configured(client, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     resp = client.post("/api/extract")
     assert resp.status_code == 503 and "Settings" in resp.get_json()["error"]
-    assert b"AI label reading is off" in client.get("/devices/new").data
+    assert b"Read label with AI" not in client.get("/equipment/new").data
 
 
 def test_api_extract_success(client, monkeypatch):
@@ -101,7 +103,7 @@ def test_api_extract_success(client, monkeypatch):
     assert resp.status_code == 200
     assert resp.get_json()["fields"]["serial_number"] == "7XK2QW3"
     assert seen["images"] == [(b"img", "image/jpeg")]
-    assert b"Read label with AI" in client.get("/devices/new").data
+    assert b"Read label with AI" in client.get("/equipment/new").data
 
 
 def test_api_extract_error_is_json(client, monkeypatch):
@@ -118,7 +120,7 @@ def test_settings_saves_key_and_enables_ai(client, monkeypatch):
                        follow_redirects=True)
     assert b"Settings saved" in resp.data and "…1234".encode() in resp.data
     assert b"sk-ant-test-1234" not in resp.data  # never echoed back
-    assert b"Read label with AI" in client.get("/devices/new").data
+    assert b"Read label with AI" in client.get("/equipment/new").data
 
     seen = {}
     monkeypatch.setattr(photo_extract, "extract_device_info",
@@ -129,7 +131,7 @@ def test_settings_saves_key_and_enables_ai(client, monkeypatch):
     assert seen["key"] == "sk-ant-test-1234"
 
     client.post("/settings", data={"remove_key": "1"})
-    assert b"AI label reading is off" in client.get("/devices/new").data
+    assert b"Read label with AI" not in client.get("/equipment/new").data
 
 
 def test_settings_network_toggle(client):
@@ -146,7 +148,7 @@ def test_phone_blocked_until_allowed_then_works_without_restart(client):
     assert resp.status_code == 403 and b"Phone access is turned off" in resp.data
     client.post("/settings", data={"allow_network": "1"})  # from this computer
     resp = client.get("/", environ_base=PHONE)
-    assert resp.status_code == 200 and b"Total devices" in resp.data
+    assert resp.status_code == 200 and b"What do you want to do?" in resp.data
     assert client.get("/static/style.css", environ_base=PHONE).status_code == 200
     client.post("/settings", data={})  # turn it off again
     assert client.get("/", environ_base=PHONE).status_code == 403
@@ -174,7 +176,7 @@ def test_settings_warns_when_started_with_app_py(client):
 
 
 def test_form_accepts_heic_photos(client):
-    page = client.get("/devices/new").data
+    page = client.get("/equipment/new").data
     assert b'accept="image/*,.heic,.heif"' in page
     assert b"vendor/heic2any.min.js" in page
     assert client.get("/static/vendor/heic2any.min.js").status_code == 200

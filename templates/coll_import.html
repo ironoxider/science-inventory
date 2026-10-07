@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Import {{ coll.title|lower }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ url_for(coll.key ~ '.index') }}">← {{ coll.title }}</a></p>
+<h1>Import {{ coll.title|lower }} from CSV</h1>
+{% if result %}
+  <div class="flash {{ 'error' if result.errors else 'success' }}">
+    Added {{ result.added }}, updated {{ result.updated }}{% if result.errors %}, {{ result.errors|length }} row(s) skipped:{% endif %}
+    {% if result.errors %}<ul>{% for e in result.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+{% endif %}
+<form method="post" enctype="multipart/form-data" class="inline-form">
+  <input type="file" name="file" accept=".csv,text/csv" required>
+  <button type="submit">Import</button>
+</form>
+<p>The first row must be the column names. Columns can be in any order and you can leave out the ones you don't have:</p>
+<p><code>{{ coll.columns|join(', ') }}</code></p>
+<ul>
+  <li>Required: {% for f in coll.fields if f.required %}<code>{{ f.name }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.</li>
+  <li>A row with an <code>id</code> from an export updates that record. Otherwise a row matching
+    {% for key in coll.natural_keys %}{% if not loop.first %} or {% endif %}the same {{ key|join(' + ')|replace('_', ' ') }}{% endfor %}
+    updates the existing record; anything else is added. Blank cells leave existing values unchanged, so importing the same file twice doesn't create duplicates.</li>
+  <li>Locations and drop-down values that don't exist yet are created.{% if coll.field('hazards') %} Separate several hazards with <code>;</code>.{% endif %}</li>
+  <li>Dates must be <code>YYYY-MM-DD</code>.</li>
+  <li>Tip: <a href="{{ url_for(coll.key ~ '.export') }}">export</a> first to get a file in the right format.</li>
+</ul>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ coll.display(record) }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ url_for(coll.key ~ '.index') }}">← {{ coll.title }}</a></p>
+<div class="heading">
+  <h1>{{ coll.display(record) }}</h1>
+  <div class="actions">
+    <a class="button" href="{{ url_for(coll.key ~ '.edit', record_id=record.id) }}">Edit</a>
+    <form method="post" action="{{ url_for(coll.key ~ '.delete', record_id=record.id) }}"
+          onsubmit="return confirm('Delete this {{ coll.singular }}{{ ' and all its copies and loan history' if coll.key == 'textbooks' }}? This cannot be undone.');">
+      <button type="submit" class="danger">Delete</button>
+    </form>
+  </div>
+</div>
+<dl class="details">
+  {% for f in coll.fields %}
+    {% set value = record['location'] if f.type == 'location' else record[f.name] %}
+    <dt>{{ f.label }}</dt>
+    <dd class="{{ 'notes' if f.type == 'textarea' }} {{ 'mono' if f.mono }} {{ coll.cell_class(f.name, record) if coll.cell_class }}">
+      {%- if value is none or value == '' -%}—
+      {%- elif f.type == 'url' -%}<a href="{{ value }}" target="_blank" rel="noopener">{{ value }}</a>
+      {%- elif f.type == 'number' -%}{{ '%g'|format(value) }}
+      {%- else -%}{{ value }}{%- endif -%}
+    </dd>
+  {% endfor %}
+  <dt>Added</dt><dd>{{ record.created_at }} UTC</dd>
+  <dt>Last updated</dt><dd>{{ record.updated_at }} UTC</dd>
+</dl>
+
+{% if coll.view_extra %}{% include coll.view_extra %}{% endif %}
+
+<h2>History</h2>
+{% if history %}
+<table class="history">
+  <thead><tr><th>When (UTC)</th><th>Change</th></tr></thead>
+  <tbody>
+  {% for h in history %}
+    <tr><td>{{ h.changed_at }}</td>
+      <td>{% if h.field == 'created' %}Added{% if h.new_value %} ({{ h.new_value }}){% endif %}
+          {% else %}<strong>{{ (coll.field(h.field).label if coll.field(h.field) else h.field|replace('_', ' '))|capitalize }}</strong>: {{ h.old_value or '(blank)' }} → {{ h.new_value or '(blank)' }}{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<p class="muted">No history yet.</p>{% endif %}
+{% endblock %}

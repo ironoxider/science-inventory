@@ -4,19 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="app-version" content="{{ APP_VERSION }}">
-  <title>{% block title %}Device Inventory{% endblock %}</title>
+  <title>{% block title %}{{ APP_NAME }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="{{ url_for('index') }}">Device Inventory</a>
+    <a class="brand" href="{{ url_for('home') }}">{{ APP_NAME }}</a>
     <nav>
-      <a href="{{ url_for('index') }}">Devices</a>
+      <a href="{{ url_for('equipment.index') }}">Equipment</a>
+      <a href="{{ url_for('textbooks.index') }}">Textbooks</a>
+      <a href="{{ url_for('lending.desk') }}">Lending</a>
+      <a href="{{ url_for('chemicals.index') }}">Chemicals</a>
       <a href="{{ url_for('locations') }}">Locations</a>
       <a href="{{ url_for('lists') }}">Lists</a>
-      <a href="{{ url_for('import_csv') }}">Import</a>
       <a href="{{ url_for('settings') }}">Settings</a>
-      <a class="button" href="{{ url_for('device_new') }}">+ Add device</a>
+      <form class="nav-search" action="{{ url_for('search') }}" method="get" role="search">
+        <input type="search" name="q" placeholder="Search or scan…" aria-label="Search everything">
+      </form>
     </nav>
   </header>
   <main>
@@ -25,6 +29,6 @@
     {% endfor %}
     {% block content %}{% endblock %}
   </main>
-  <footer class="app-footer">Device Inventory version {{ APP_VERSION }}</footer>
+  <footer class="app-footer">{{ APP_NAME }} version {{ APP_VERSION }}</footer>
 </body>
 </html>

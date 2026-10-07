@@ -1,149 +1,116 @@
-# Device Inventory
+# Science Inventory
 
-A small web app for keeping track of devices: what you have, where it is, who has it,
-and its model and serial numbers. It runs on Flask with a single SQLite file, so there
-is no database server to set up.
+A small web app for a science department to keep track of **lab equipment**, **textbooks** (with
+checkout to students and teachers) and **chemicals**. It runs on Flask with a single SQLite file, so there
+is no database server to set up. It started as a copy of the school's Device Inventory app and shares its
+installer, photo/barcode reading and settings.
 
 ## Features
 
-- **Devices**: asset tag, name, category, manufacturer, model, model number, serial number,
-  manufacture date, location, assigned-to, status, purchase date, warranty expiry, replacement date, notes
-- **Drop-downs you control**: the category and status lists are managed on the **Lists** page (add, rename,
-  reorder, remove), or add a new entry straight from the device form with "+ Add new…". "Assigned to"
-  suggests everyone you've entered before, and you can still type a new name.
-- **Replacement reminders**: each device gets a "Replace by" date, 3 years after its purchase date
-  (or manufacture date) unless you change it. The Devices page warns about devices that are overdue or due
-  within 90 days. Both numbers can be changed in Settings.
-- **Locations**: add, rename, or delete them (a location that still has devices can't be deleted).
-  You can also create a new location straight from the device form.
-- **Search and filter**: search across tag, name, model, model number, serial, person, notes and
-  location. Filter by location, category and status, and sort by any column.
-- **History**: every change to a device is logged (for example "Location: Room 204 → IT Office").
-- **Dashboard counts**: total devices, a count per status, out of warranty, and due for replacement.
-  Click a count to see those devices.
-- **Fill from photos**: on the Add/Edit device form, take or choose photos of the device label.
-  Barcodes are read right in the browser (free, and works offline). If an Anthropic API key is set,
-  **Read label with AI** also reads the printed text and fills in the manufacturer, model, model number,
-  serial number and category.
-- **CSV export and import**: export the current filtered view. When you import, a row whose asset
-  tag already exists updates that device, and any other row adds a new one.
+- **Start page** with the three areas, counts, and a "Needs attention" list: expired or soon-to-expire
+  chemicals, overdue textbooks, and equipment below its reorder level.
+- **Lab equipment**: item, category, size/description, **quantity** (e.g. 24 beakers, 250 mL), reorder level,
+  location, condition. Individual instruments (microscopes, balances, probes) can also have an asset tag,
+  manufacturer, model and serial number. Supplier, catalog number, cost and purchase date are optional.
+- **Textbooks**: add each title once (type, scan or photograph the ISBN barcode and click **Look up** to fill in
+  the title, author, publisher and year from Open Library), then **add numbered copies** in one go
+  (e.g. BIO-001 … BIO-030).
+  - **Check out / check in** each copy to a student or teacher, with a due date and the copy's condition going
+    out and coming back. Every copy keeps its full loan history.
+  - The **Lending** page lists what's out, what's overdue, and who has what. Scan or type a copy number there
+    (a USB barcode scanner works) to jump straight to that copy.
+- **Chemicals**: name, concentration/grade, CAS number, formula, amount and unit, number of containers,
+  storage location/cabinet, **storage group** (to keep incompatibles apart), **hazard classes**, received and
+  **expiration dates**, supplier and a link to the **Safety Data Sheet (SDS)**. Expired chemicals and those
+  expiring within 90 days (adjustable) are flagged.
+- **Search everything** from the box at the top: items, chemicals (including CAS numbers), titles, ISBNs,
+  copy numbers and borrowers' names.
+- **Drop-down lists you control** on the **Lists** page: equipment categories, conditions, hazard classes,
+  storage groups, units and subjects. Rename (updates every record using it), reorder, add or remove.
+  Forms also offer "+ Add new…".
+- **History** of every change on every record.
+- **CSV export and import** for equipment, chemicals and textbook titles, plus a **copies import** that loads
+  existing textbook copies (and who currently has them) from a spreadsheet.
+- **Fill from photos** on the equipment form: barcodes are read in the browser; with an Anthropic API key,
+  "Read label with AI" also reads the maker, model and serial number from the label.
+- **Phones**: turn on phone access in Settings and scan the QR code to use it from a phone on the same Wi-Fi.
 
 ## Download and run (no programming needed)
 
-1. On GitHub, open the repository's **Actions** tab and click the latest successful **Build app** run.
+1. On GitHub, open this repository's **Actions** tab and click the latest successful **Build app** run.
    Under **Artifacts**, download the file for your computer:
-   - **Windows:** `DeviceInventory-windows`
-   - **Mac (M1/M2/M3/M4, 2020 or newer):** `DeviceInventory-mac-apple-silicon`
-   - **Linux:** `DeviceInventory-linux`
-2. Unzip the download. On a Mac there is a second zip inside, so double-click that one too.
-3. Double-click **DeviceInventory**. A small window opens showing the address, and your web browser
-   opens the app. **Keep that window open while you use it. Close it to stop the app.**
+   - **Windows:** `ScienceInventory-windows`
+   - **Mac (Apple chip, 2020 or newer):** `ScienceInventory-mac-apple-silicon`
+   - **Linux:** `ScienceInventory-linux`
+2. Unzip the download (on a Mac there's a second zip inside; double-click that too).
+3. Double-click **ScienceInventory**. A small window shows the address and your browser opens the app.
+   **Keep that window open while you use it; close it to stop the app.**
 
-The first time you open it, your computer may warn you, because the program isn't signed by a
-registered developer:
+The first time, your computer may warn you because the program isn't signed by a registered developer:
+**Windows:** click **More info**, then **Run anyway**. **Mac:** System Settings → Privacy & Security →
+**Open Anyway**.
 
-- **Windows** ("Windows protected your PC"): click **More info**, then **Run anyway**.
-- **Mac** ("cannot be opened" or "Apple could not verify"): click **Done**, then open
-  **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to DeviceInventory.
-
-Your data is saved in **Documents/Device Inventory/inventory.db**. To back it up, copy that file
-somewhere safe. The **Settings** page in the app shows the exact location. Replacing the program with
-a newer version keeps your data.
-
-Intel Macs and Chromebooks can't run the downloads; use "Run from source" below instead.
-
-**Which version am I running?** The version number is at the bottom of every page. If you still see an old
-version after updating, an older copy is probably still running: close every Device Inventory window, then
-open the new one. (A new version also warns you in its window when an older copy is still running.)
+Your data is saved in **Documents/Science Inventory/inventory.db**. Copy that file somewhere safe to back it up.
+This app uses its own folder and port (5050), so it can run on the same computer as Device Inventory.
 
 ## Run from source
 
-Use this if the download doesn't work on your computer (for example on a Chromebook or an Intel Mac).
-You need Python 3.9 or newer ([python.org/downloads](https://www.python.org/downloads/); on Windows,
-tick **"Add python.exe to PATH"** in the installer).
+Use this on a Chromebook or an Intel Mac. You need Python 3.9 or newer
+([python.org/downloads](https://www.python.org/downloads/); on Windows tick **"Add python.exe to PATH"**).
 
 1. On GitHub, click **Code → Download ZIP** and unzip it.
-2. Start the app with the start script for your computer. The first run installs everything the app
-   needs (about a minute); after that it starts in a few seconds.
-   - **Windows:** double-click **Start Device Inventory.bat**
-   - **Mac:** double-click **Start Device Inventory.command** (the first time, right-click it and choose **Open**)
-   - **Chromebook / Linux:** in the Terminal, go to the folder and run `./start.sh`.
-     If it says the Python environment couldn't be created, run `sudo apt install python3-venv` first.
-
-The start scripts install the app's add-ons into a private `.venv` folder, so you don't need to run
-`pip` yourself. Running `python app.py` directly without doing that causes "No module named ..." errors.
+2. Start it with the script for your computer (the first run installs what it needs, about a minute):
+   - **Windows:** double-click **Start Science Inventory.bat**
+   - **Mac:** double-click **Start Science Inventory.command** (the first time, right-click → **Open**)
+   - **Chromebook / Linux:** in the Terminal, go to the folder and run `./start.sh`
+     (if it can't create the Python environment, run `sudo apt install python3-venv` first)
 
 When run from source, the data is stored in `inventory.db` in the app's folder.
 
-### Building the program yourself
+## Getting started
 
-```bash
-pip install pyinstaller
-pyinstaller DeviceInventory.spec     # result is in dist/
-```
+1. **Locations:** add your rooms, prep rooms and cabinets (or type new ones while adding things).
+2. **Lists:** adjust the categories, hazard classes and storage groups to match how your department works.
+3. **Textbooks:** add a title, then **Add copies** on its page. Write or label each copy number inside the cover.
+   If you already track copies in a spreadsheet, use **Textbooks → Import copies** instead.
+4. **Settings:** set the default textbook due date (it otherwise uses June 30, the end of the school year)
+   and how many days ahead to warn about expiring chemicals.
 
-The **Build app** GitHub Actions workflow does this for Windows, macOS and Linux on every push.
-Pushing a tag such as `v1.0.0` also puts the files on the repository's Releases page.
+## CSV formats
 
-### Reading labels from photos (optional)
+Each list page has **Export CSV** and **Import CSV**; export first to see the exact columns. Importing a row
+that has an `id` from an export, or that matches an existing record (equipment: asset tag, or item + size +
+location; chemicals: name + concentration + location; textbooks: ISBN, or title + edition) **updates** it
+instead of adding a duplicate. Blank cells leave existing values unchanged. Separate several hazards with `;`.
 
-Barcode scanning works with no setup. To have the AI read the printed label text as well:
+**Textbook copies** (`Textbooks → Import copies`):
+`copy_number, isbn, title, edition, condition, location, status, borrower, checked_out_on, due_date, notes`.
+Titles are matched by ISBN or title + edition and created if missing; a `borrower` records the copy as
+checked out.
 
-1. Create an API key at https://console.anthropic.com (this needs an account with billing set up).
-2. In the app, open **Settings**, paste the key and click **Save settings**. It takes effect straight away.
-   The key is saved in `settings.json` next to the database. (You can set the `ANTHROPIC_API_KEY`
-   environment variable instead.)
-
-How it works:
-
-- The browser shrinks photos (longest side 2000 px) before uploading them. Each **Read label with AI** click
-  sends them to Anthropic's API. That typically costs a few cents per click (1–5¢), depending on how many photos you send. The photos are **not** saved by the app.
-- Fields that are empty get filled in and highlighted. If a field already has a different value, you get
-  a "Use photo value" button instead, so your typing is never overwritten.
-  **Always check the highlighted fields before saving.**
-- If the serial number the AI read matches a barcode on the label, the app says so. That's a good sign it's correct.
-- Each barcode found gets buttons to use it as the serial number, model number or asset tag.
-- iPhone photos in **HEIC** format work in every browser. If the browser can't open them itself (Chrome,
-  Edge and Firefox can't), the app converts them to JPEG on your computer first. This takes a few seconds per photo.
-- Best results: photograph the label straight on, fill the frame with it, and avoid glare. Add a
-  second photo of the whole device if the label doesn't show the model name.
-- **Using a phone:** on the **Settings** page, tick "Allow phones and other computers on this network" and
-  click Save (no restart needed). Settings then shows the phone address (like `http://192.168.1.20:5000/`)
-  and a QR code to scan with the phone's camera. The phone must be on the same Wi-Fi. "Choose / take photos"
-  then offers the camera. If the phone can't connect, Settings has a "Phone still can't connect?" checklist
-  (port number, firewall, Wi-Fi that blocks devices from reaching each other, Chromebook port forwarding).
-  Settings itself, with the API key, can only be opened on the computer running the app.
-
-The AI model defaults to `claude-opus-5`. Set `INVENTORY_AI_MODEL` to use another one.
-If a request is declined by the model's safety checks, it is automatically retried on a fallback model.
-
-### Configuration (environment variables)
+## Configuration (environment variables)
 
 | Variable | Default | Purpose |
 |---|---|---|
 | `INVENTORY_DATA_DIR` | see above | Folder for the database and `settings.json` |
 | `INVENTORY_DB` | `<data dir>/inventory.db` | Path to the SQLite database file |
-| `INVENTORY_HOST` | `127.0.0.1` | Address to listen on. Overrides the Settings network option |
-| `INVENTORY_PORT` | `5000` | Port |
-| `INVENTORY_SECRET_KEY` | random, saved in `settings.json` | Session signing key |
+| `INVENTORY_HOST` | `0.0.0.0` (other devices are turned away unless phone access is on) | Address to listen on |
+| `INVENTORY_PORT` | `5050` | First port to try |
 | `ANTHROPIC_API_KEY` | unset | API key for AI label reading, if not saved on the Settings page |
 | `INVENTORY_AI_MODEL` | `claude-opus-5` | Claude model used to read labels |
-| `INVENTORY_DEBUG` | unset | Set to `1` for Flask debug mode (only on your own machine) |
 
-> **Note:** the app has no login. It is meant for your own computer or a trusted internal
-> network. Don't expose it to the internet as-is.
+> **Note:** there is no login. Use it on your own computer or a trusted school network, and only turn on phone
+> access on a network you trust. Settings (including the API key) can only be changed on the computer running it.
 
-## CSV format
+## Building the program yourself
 
-Columns, in any order (only `asset_tag` is required; headers like `Asset Tag` also work):
-
-```
-asset_tag,name,category,manufacturer,model,model_number,serial_number,manufacture_date,location,assigned_to,status,purchase_date,warranty_expires,replacement_date,notes
+```bash
+pip install -r requirements.txt pyinstaller
+pyinstaller ScienceInventory.spec     # result is in dist/
 ```
 
-Dates use `YYYY-MM-DD`. Status must be one of the statuses on the Lists page (upper/lower case doesn't
-matter). A category that isn't on the list yet is added to it. If `replacement_date` is blank, it's filled in
-from the purchase or manufacture date.
+The **Build app** GitHub Actions workflow builds Windows, macOS and Linux versions on every push and checks
+that each one starts. Pushing a tag such as `v1.0.0` also publishes them on the Releases page.
 
 ## Tests
 
@@ -152,17 +119,13 @@ pip install pytest
 python -m pytest
 ```
 
-The tests use a fake AI client, so they don't need an API key and don't cost anything.
-
 ## Third-party code
 
-`static/vendor/zxing.min.js` is [ZXing for JS](https://github.com/zxing-js/library) 0.21.3 (Apache 2.0,
-see `static/vendor/zxing-LICENSE.txt`). The app uses it to read barcodes in browsers that don't have a
-built-in barcode reader.
-
-`static/vendor/heic2any.min.js` is [heic2any](https://github.com/alexcorvi/heic2any) 0.0.4 (MIT), which
-includes [libheif](https://github.com/strukturag/libheif) (LGPL-3.0). See `static/vendor/heic2any-LICENSE.txt`.
-The app uses it to convert iPhone HEIC photos, and only loads it when a HEIC photo is picked.
-
-`static/vendor/qrcode.js` is [QR Code Generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4
-by Kazuhiko Arase (MIT, license in the file header). It draws the phone-address QR code on the Settings page.
+- `static/vendor/zxing.min.js`: [ZXing for JS](https://github.com/zxing-js/library) 0.21.3 (Apache 2.0, see
+  `static/vendor/zxing-LICENSE.txt`), reads barcodes.
+- `static/vendor/heic2any.min.js`: [heic2any](https://github.com/alexcorvi/heic2any) 0.0.4 (MIT), which includes
+  [libheif](https://github.com/strukturag/libheif) (LGPL-3.0); see `static/vendor/heic2any-LICENSE.txt`. Converts
+  iPhone HEIC photos.
+- `static/vendor/qrcode.js`: [QR Code Generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4
+  (MIT, license in the file header), draws the phone QR code.
+- Book details come from [Open Library](https://openlibrary.org/developers/api).

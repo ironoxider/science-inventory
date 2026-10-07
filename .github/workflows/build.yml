@@ -1,6 +1,6 @@
 name: Build app
 
-# Builds the double-click Device Inventory program for Windows, macOS and Linux.
+# Builds the double-click Science Inventory program for Windows, macOS and Linux.
 # Download the results from the run's "Artifacts" section. Pushing a tag such as
 # v1.0.0 also publishes them on the repository's Releases page.
 on:
@@ -42,26 +42,26 @@ jobs:
         run: python -m pytest -q
 
       - name: Build
-        run: pyinstaller --noconfirm DeviceInventory.spec
+        run: pyinstaller --noconfirm ScienceInventory.spec
 
       - name: Check the built program starts
         run: |
-          if [ "$RUNNER_OS" = "Windows" ]; then ./dist/DeviceInventory.exe --selftest; else ./dist/DeviceInventory --selftest; fi
+          if [ "$RUNNER_OS" = "Windows" ]; then ./dist/ScienceInventory.exe --selftest; else ./dist/ScienceInventory --selftest; fi
 
       - name: Package
         run: |
           mkdir out
           case "$RUNNER_OS" in
-            Windows) cp dist/DeviceInventory.exe out/DeviceInventory.exe ;;
+            Windows) cp dist/ScienceInventory.exe out/ScienceInventory.exe ;;
             # Zip so the "executable" permission survives the download.
-            macOS)   ditto -c -k --keepParent dist/DeviceInventory out/DeviceInventory-mac.zip ;;
-            Linux)   (cd dist && zip -q ../out/DeviceInventory-linux.zip DeviceInventory) ;;
+            macOS)   ditto -c -k --keepParent dist/ScienceInventory out/ScienceInventory-mac.zip ;;
+            Linux)   (cd dist && zip -q ../out/ScienceInventory-linux.zip ScienceInventory) ;;
           esac
           ls -la out
 
       - uses: actions/upload-artifact@v4
         with:
-          name: DeviceInventory-${{ matrix.label }}
+          name: ScienceInventory-${{ matrix.label }}
           path: out/*
           retention-days: 90
 
@@ -77,7 +77,7 @@ jobs:
         shell: bash
     env:
       INVENTORY_NO_BROWSER: "1"
-      INVENTORY_PORT: "5070"
+      INVENTORY_PORT: "5071"
     steps:
       - uses: actions/checkout@v4
 
@@ -88,12 +88,12 @@ jobs:
       - name: Start the app with its start script
         run: |
           case "$RUNNER_OS" in
-            Windows) cmd //c "Start Device Inventory.bat" > start.log 2>&1 < /dev/null & ;;
-            macOS)   "./Start Device Inventory.command" > start.log 2>&1 < /dev/null & ;;
+            Windows) cmd //c "Start Science Inventory.bat" > start.log 2>&1 < /dev/null & ;;
+            macOS)   "./Start Science Inventory.command" > start.log 2>&1 < /dev/null & ;;
             Linux)   ./start.sh > start.log 2>&1 < /dev/null & ;;
           esac
           for i in $(seq 1 180); do
-            if curl -sf -o /dev/null http://127.0.0.1:5070/; then
+            if curl -sf -o /dev/null http://127.0.0.1:5071/; then
               echo "App answered after ${i}s"; cat start.log; exit 0
             fi
             sleep 1
@@ -111,9 +111,9 @@ jobs:
       - name: Name files per platform
         run: |
           mkdir release
-          cp artifacts/DeviceInventory-windows/DeviceInventory.exe release/DeviceInventory-windows.exe
-          cp artifacts/DeviceInventory-mac-apple-silicon/DeviceInventory-mac.zip release/
-          cp artifacts/DeviceInventory-linux/DeviceInventory-linux.zip release/
+          cp artifacts/ScienceInventory-windows/ScienceInventory.exe release/ScienceInventory-windows.exe
+          cp artifacts/ScienceInventory-mac-apple-silicon/ScienceInventory-mac.zip release/
+          cp artifacts/ScienceInventory-linux/ScienceInventory-linux.zip release/
       - uses: softprops/action-gh-release@v2
         with:
           files: release/*

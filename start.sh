@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start Device Inventory from the source code (Mac, Linux, Chromebook).
+# Start Science Inventory from the source code (Mac, Linux, Chromebook).
 # First run: sets up a private Python environment in .venv and installs what
 # the app needs. After that it just starts the app and opens your browser.
 cd "$(dirname "$0")" || exit 1
@@ -25,7 +25,7 @@ done
   Chromebook / Linux:  sudo apt install python3 python3-venv"
 
 if [ ! -x .venv/bin/python ]; then
-    echo "First-time setup: installing what Device Inventory needs (about a minute)..."
+    echo "First-time setup: installing what Science Inventory needs (about a minute)..."
     rm -rf .venv
     if ! "$PY" -m venv .venv; then
         rm -rf .venv

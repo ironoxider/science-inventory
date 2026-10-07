@@ -1,4 +1,4 @@
-# PyInstaller build definition. Build with:  pyinstaller DeviceInventory.spec
+# PyInstaller build definition. Build with:  pyinstaller ScienceInventory.spec
 # Produces a single double-click program in dist/.
 from PyInstaller.utils.hooks import collect_submodules
 
@@ -14,7 +14,7 @@ exe = EXE(
     a.scripts,
     a.binaries,
     a.datas,
-    name="DeviceInventory",
+    name="ScienceInventory",
     console=True,  # the window shows the address and closing it stops the app
     upx=False,
 )

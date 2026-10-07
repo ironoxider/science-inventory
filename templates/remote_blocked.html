@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Not available · Device Inventory</title>
+  <title>Not available · {{ APP_NAME }}</title>
   <style>
     :root { --bg: #f6f7f9; --panel: #fff; --text: #1d2330; --muted: #667085; --border: #dde1e7; }
     @media (prefers-color-scheme: dark) {
@@ -23,17 +23,17 @@
   {% if reason == "settings" %}
     <h1>Settings can only be changed on the computer</h1>
     <p>For safety, the Settings page (with the API key and phone access) only opens on the computer that's
-      running Device Inventory. Everything else works from here.</p>
-    <p><a href="/">Back to the devices</a></p>
+      running {{ APP_NAME }}. Everything else works from here.</p>
+    <p><a href="/">Back to the start page</a></p>
   {% else %}
     <h1>Phone access is turned off</h1>
-    <p>You've reached Device Inventory, but it only accepts this computer right now. To use it from this device:</p>
+    <p>You've reached {{ APP_NAME }}, but it only accepts this computer right now. To use it from this device:</p>
     <ol>
-      <li>On the computer running Device Inventory, open <strong>Settings</strong>.</li>
+      <li>On the computer running {{ APP_NAME }}, open <strong>Settings</strong>.</li>
       <li>Tick <strong>Allow phones and other computers on this network</strong> and click <strong>Save settings</strong>.</li>
       <li>Reload this page.</li>
     </ol>
-    <p class="muted">Device Inventory {{ APP_VERSION }}</p>
+    <p class="muted">{{ APP_NAME }} {{ APP_VERSION }}</p>
   {% endif %}
   </div>
 </main>

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Lending · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>Textbook lending</h1>
+<section class="lend-box">
+  <h2>Check out or return a copy</h2>
+  <form action="{{ url_for('lending.find') }}" method="get" class="inline-form">
+    <input name="copy" placeholder="Scan or type the copy number (e.g. BIO-014)" autofocus autocomplete="off" aria-label="Copy number" class="mono wide-input">
+    <button type="submit">Go</button>
+  </form>
+  <p class="small-note muted">A USB barcode scanner works here too: scan the label and it opens the copy's page.</p>
+</section>
+
+<div class="heading">
+  <h2>{% if show == 'overdue' %}Overdue{% elif show == 'all' %}All loans{% else %}Checked out now{% endif %}</h2>
+  <span>
+    <a href="{{ url_for('lending.desk') }}">Out now ({{ counts.out or 0 }})</a> ·
+    <a href="{{ url_for('lending.desk', show='overdue') }}" class="{{ 'expired' if counts.overdue }}">Overdue ({{ counts.overdue or 0 }})</a> ·
+    <a href="{{ url_for('lending.desk', show='all') }}">All, including returned</a> ·
+    <a href="{{ url_for('lending.export_loans') }}">Export CSV</a>
+  </span>
+</div>
+<form class="filters" method="get">
+  <input type="hidden" name="show" value="{{ show }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Find by student, copy number or title…">
+  <button type="submit">Search</button>
+</form>
+{% if loans %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Borrower</th><th>Copy</th><th>Title</th><th>Out</th><th>Due</th>{% if show == 'all' %}<th>Returned</th>{% endif %}<th></th></tr></thead>
+  <tbody>
+  {% for k in loans %}
+    <tr>
+      <td class="wrap"><a href="{{ url_for('lending.desk', q=k.borrower, show=show) }}">{{ k.borrower }}</a></td>
+      <td class="mono"><a href="{{ url_for('lending.copy_view', copy_id=k.copy_id) }}">{{ k.copy_number }}</a></td>
+      <td class="wrap"><a href="{{ url_for('textbooks.view', record_id=k.textbook_id) }}">{{ k.title }}</a></td>
+      <td>{{ k.checked_out_on }}</td>
+      <td class="{{ 'expired' if not k.returned_on and k.due_date and k.due_date < today() }}">{{ k.due_date or '' }}</td>
+      {% if show == 'all' %}<td>{{ k.returned_on or '' }}</td>{% endif %}
+      <td>{% if not k.returned_on %}
+        <form method="post" action="{{ url_for('lending.checkin', copy_id=k.copy_id) }}" class="row-actions">
+          <input type="hidden" name="next" value="desk">
+          <button type="submit" class="secondary small">Check in</button>
+        </form>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">{{ loans|length }} shown. "Check in" here keeps the copy's current condition; open the copy to record a different one.</p>
+{% else %}<p class="empty">Nothing to show.</p>{% endif %}
+{% endblock %}

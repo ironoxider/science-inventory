@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Settings · Device Inventory<script src="{{ url_for('static', filename='vendor/qrcode.js') }}"></script>
+{% block title %}Settings · {{ APP_NAME }}<script src="{{ url_for('static', filename='vendor/qrcode.js') }}"></script>
 <script>
   (function () {
     var box = document.getElementById("phone-qr");
@@ -17,7 +17,7 @@
   <fieldset>
     <legend>AI label reading</legend>
     <p class="wide muted">
-      Lets "Read label with AI" fill in device details from photos. Create a key at
+      Lets "Read label with AI" fill in equipment details (make, model, serial number) from photos. Create a key at
       <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>
       (needs billing set up; typically 1–5¢ per photo read).
     </p>
@@ -37,7 +37,7 @@
     <legend>Phones &amp; other computers</legend>
     <label class="checkbox wide">
       <input type="checkbox" name="allow_network" value="1" {% if allow_network %}checked{% endif %}>
-      Allow phones and other computers on this network to open Device Inventory
+      Allow phones and other computers on this network to open {{ APP_NAME }}
     </label>
     <p class="wide muted">
       Use this to take label photos with a phone. It takes effect as soon as you click Save settings.
@@ -46,7 +46,7 @@
     </p>
     {% if not phone.listening %}
     <p class="wide flash warn">This copy was started with <code>python app.py</code>, which only lets this computer
-      connect. To use a phone, close it and start Device Inventory with its start script or the downloaded program.</p>
+      connect. To use a phone, close it and start {{ APP_NAME }} with its start script or the downloaded program.</p>
     {% elif allow_network and phone.urls %}
     <div class="wide phone-box">
       <div id="phone-qr" class="qr" data-url="{{ phone.urls[0] }}" aria-label="QR code for {{ phone.urls[0] }}"></div>
@@ -63,13 +63,13 @@
       <summary>Phone still can't connect?</summary>
       <ul>
         <li><strong>"Connection refused":</strong> check the number after the <code>:</code> matches the address above.
-          It can change, for example if another copy of Device Inventory was already open. Close all other
-          Device Inventory windows and reopen it.</li>
+          It can change, for example if another copy of {{ APP_NAME }} was already open. Close all other
+          {{ APP_NAME }} windows and reopen it.</li>
         <li><strong>The page keeps loading, then times out:</strong> the computer's firewall is probably blocking it.
-          <em>Windows:</em> when Windows asks whether to allow DeviceInventory (or Python) on networks, tick
+          <em>Windows:</em> when Windows asks whether to allow ScienceInventory (or Python) on networks, tick
           <strong>Private networks</strong> and click Allow. If you missed that, search the Start menu for
           "Allow an app through Windows Firewall". <em>Mac:</em> System Settings &rarr; Network &rarr; Firewall &rarr;
-          Options, and allow DeviceInventory (or Python).</li>
+          Options, and allow ScienceInventory (or Python).</li>
         <li>The phone must be on the <strong>same Wi-Fi</strong> as this computer, not on mobile data. Some school and
           guest Wi-Fi networks don't let devices reach each other at all; if so, ask IT, or use a network where
           that's allowed.</li>
@@ -84,20 +84,19 @@
     {% endif %}
   </fieldset>
   <fieldset>
-    <legend>Replacement reminders</legend>
-    <label>Replace devices after (years)
-      <input type="number" name="lifespan_years" min="1" max="20" value="{{ lifespan_years }}">
+    <legend>Reminders &amp; lending</legend>
+    <label>Warn about chemicals this many days before they expire
+      <input type="number" name="chemical_warning_days" min="0" max="730" value="{{ chemical_warning_days }}">
     </label>
-    <label>Remind me this many days ahead
-      <input type="number" name="reminder_days" min="0" max="730" value="{{ reminder_days }}">
+    <label>Default textbook due date
+      <input type="date" name="textbook_due_date" value="{{ textbook_due_date }}">
     </label>
-    <p class="wide muted">A device's "Replace by" date fills in automatically as this many years after its purchase
-      date (or manufacture date). Changing the number only affects dates filled in from now on. The Devices page
-      warns you about devices that are past their date or due within the reminder window.</p>
+    <p class="wide muted">The due date is filled in for you when checking out a textbook (you can still change it each
+      time). If it's left in the past, the end of the current school year (June 30) is used.</p>
   </fieldset>
   <fieldset>
     <legend>Your data</legend>
-    <p class="wide">All devices are stored in this file. Copy it somewhere safe to back up:<br>
+    <p class="wide">Everything is stored in this file. Copy it somewhere safe to back up:<br>
       <code class="mono">{{ db_path }}</code></p>
   </fieldset>
   <div class="actions"><button type="submit">Save settings</button></div>

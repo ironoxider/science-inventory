@@ -1,29 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Locations · Device Inventory{% endblock %}
+{% block title %}Locations · {{ APP_NAME }}{% endblock %}
 {% block content %}
 <h1>Locations</h1>
 <form method="post" class="inline-form">
-  <input name="name" placeholder="Name (e.g. Room 204)" required>
+  <input name="name" placeholder="Name (e.g. Room 210, Prep room cabinet B)" required>
   <input name="building" placeholder="Building">
   <input name="room" placeholder="Room">
   <input name="notes" placeholder="Notes">
   <button type="submit">Add location</button>
 </form>
-{% if locations %}
+{% if rows %}
 <div class="table-wrap">
 <table>
-  <thead><tr><th>Name</th><th>Building</th><th>Room</th><th>Notes</th><th>Devices</th><th></th></tr></thead>
+  <thead><tr><th>Name</th><th>Building</th><th>Room</th><th>Notes</th><th>Equipment</th><th>Chemicals</th><th>Textbook copies</th><th></th></tr></thead>
   <tbody>
-  {% for l in locations %}
+  {% for l, used in rows %}
     <tr>
       <td>{{ l.name }}</td>
       <td>{{ l.building or '' }}</td>
       <td>{{ l.room or '' }}</td>
       <td>{{ l.notes or '' }}</td>
-      <td><a href="{{ url_for('index', location=l.id) }}">{{ l.device_count }}</a></td>
+      <td><a href="{{ url_for('equipment.index', location=l.id) }}">{{ used.equipment }}</a></td>
+      <td><a href="{{ url_for('chemicals.index', location=l.id) }}">{{ used.chemicals }}</a></td>
+      <td>{{ used.copies }}</td>
       <td class="row-actions">
         <a href="{{ url_for('location_edit', location_id=l.id) }}">Edit</a>
-        {% if not l.device_count %}
+        {% if not (used.equipment or used.chemicals or used.copies) %}
         <form method="post" action="{{ url_for('location_delete', location_id=l.id) }}" onsubmit="return confirm('Delete {{ l.name }}?');">
           <button type="submit" class="link danger">Delete</button>
         </form>
@@ -34,5 +36,5 @@
   </tbody>
 </table>
 </div>
-{% else %}<p class="empty">No locations yet. Add one above, or create them while adding devices.</p>{% endif %}
+{% else %}<p class="empty">No locations yet. Add one above, or create them while adding equipment, chemicals or textbook copies.</p>{% endif %}
 {% endblock %}

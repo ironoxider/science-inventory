@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ copy.copy_number }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="{{ url_for('textbooks.view', record_id=copy.textbook_id) }}#copies">← {{ copy.title }}</a> ·
+  <a href="{{ url_for('lending.desk') }}">Lending desk</a></p>
+<div class="heading">
+  <h1><span class="mono">{{ copy.copy_number }}</span> <small>{{ copy.title }}{% if copy.edition %} ({{ copy.edition }}){% endif %}</small></h1>
+  <span class="badge big-badge status-{{ copy.status|lower|replace(' ', '-') }}">{{ copy.status }}</span>
+</div>
+
+{% if current %}
+<section class="lend-box out">
+  <h2>Checked out to {{ current.borrower }}</h2>
+  <p>Since {{ current.checked_out_on }}{% if current.due_date %} · due <strong class="{{ 'expired' if current.due_date < today() }}">{{ current.due_date }}</strong>{% if current.due_date < today() %} (overdue){% endif %}{% endif %}
+    {% if current.condition_out %} · condition when lent: {{ current.condition_out }}{% endif %}</p>
+  <form method="post" action="{{ url_for('lending.checkin', copy_id=copy.id) }}" class="inline-form">
+    <label>Condition now
+      <select name="condition">{% for c in conditions %}<option {% if c == (copy.condition or 'Good') %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    </label>
+    <input name="notes" placeholder="Notes (optional)">
+    <button type="submit">Check in</button>
+  </form>
+</section>
+{% elif copy.status in ('Available', 'Damaged') %}
+<section class="lend-box">
+  <h2>Check out</h2>
+  <form method="post" action="{{ url_for('lending.checkout', copy_id=copy.id) }}" class="inline-form">
+    <input name="borrower" list="people" placeholder="Student or teacher name" required autofocus autocomplete="off" aria-label="Borrower">
+    <datalist id="people">{% for p in people %}<option value="{{ p }}">{% endfor %}</datalist>
+    <label>Due <input type="date" name="due_date" value="{{ due }}"></label>
+    <label>Condition
+      <select name="condition">{% for c in conditions %}<option {% if c == (copy.condition or 'Good') %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    </label>
+    <input name="notes" placeholder="Notes (optional)">
+    <button type="submit">Check out</button>
+  </form>
+</section>
+{% else %}
+<p class="flash warn">This copy is marked <strong>{{ copy.status }}</strong>. Change its status below to lend it again.</p>
+{% endif %}
+
+<details class="edit-copy">
+  <summary>Edit this copy</summary>
+  <form method="post" action="{{ url_for('lending.copy_edit', copy_id=copy.id) }}" class="device-form">
+    <fieldset>
+      <label>Copy number<input name="copy_number" value="{{ copy.copy_number }}" class="mono" required></label>
+      <label>Status
+        <select name="status">
+          {% for s in copy_statuses() if s != 'Checked out' or copy.status == 'Checked out' %}<option {% if s == copy.status %}selected{% endif %}>{{ s }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Condition
+        <select name="condition"><option value="">(None)</option>{% for c in conditions %}<option {% if c == copy.condition %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      </label>
+      <label>Location
+        <select name="location_id"><option value="">(None)</option>{% for l in locations %}<option value="{{ l.id }}" {% if l.id == copy.location_id %}selected{% endif %}>{{ l.name }}</option>{% endfor %}</select>
+        <input name="new_location" placeholder="…or type a new location" aria-label="New location">
+      </label>
+      <label class="wide">Notes<textarea name="notes" rows="2">{{ copy.notes or '' }}</textarea></label>
+    </fieldset>
+    <div class="actions">
+      <button type="submit">Save</button>
+    </div>
+  </form>
+  <form method="post" action="{{ url_for('lending.copy_delete', copy_id=copy.id) }}" onsubmit="return confirm('Delete copy {{ copy.copy_number }} and its loan history?');">
+    <button type="submit" class="link danger">Delete this copy</button>
+  </form>
+</details>
+
+<h2>Loan history</h2>
+{% if loans %}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Borrower</th><th>Out</th><th>Due</th><th>Returned</th><th>Condition out → in</th><th>Notes</th></tr></thead>
+  <tbody>
+  {% for k in loans %}
+    <tr>
+      <td class="wrap">{{ k.borrower }}</td><td>{{ k.checked_out_on }}</td>
+      <td class="{{ 'expired' if not k.returned_on and k.due_date and k.due_date < today() }}">{{ k.due_date or '' }}</td>
+      <td>{{ k.returned_on or 'Still out' }}</td>
+      <td>{{ k.condition_out or '?' }} → {{ k.condition_in or ('—' if not k.returned_on else '?') }}</td>
+      <td class="wrap">{{ k.notes or '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}<p class="muted">Never checked out.</p>{% endif %}
+
+<h2>Changes</h2>
+{% if history %}
+<table class="history"><tbody>
+  {% for h in history %}<tr><td>{{ h.changed_at }} UTC</td><td><strong>{{ h.field|replace('_', ' ')|capitalize }}</strong>{% if h.old_value or h.new_value %}: {{ h.old_value or '' }}{% if h.old_value and h.new_value %} → {% endif %}{{ h.new_value or '' }}{% endif %}</td></tr>{% endfor %}
+</tbody></table>
+{% endif %}
+{% endblock %}
