@@ -39,7 +39,7 @@
 
 {% if coll.photo %}
 <section id="photo-fill" class="photo-fill"
-         data-extract-url="{{ url_for('api_extract') }}"
+         data-extract-url="{{ url_for('api_extract', kind=coll.key) }}"
          data-heic-url="{{ url_for('static', filename='vendor/heic2any.min.js') }}"
          data-targets='{{ coll.photo.targets|tojson }}'
          {% if coll.photo.isbn %}data-isbn="1"{% endif %}>

@@ -306,9 +306,15 @@ def register_routes(app):
             return jsonify(error="AI photo reading isn't set up. Add an Anthropic API key on the "
                                  "Settings page."), 503
         images = [(f.read(), f.mimetype) for f in request.files.getlist("photos") if f and f.filename]
+        db = get_db()
         try:
-            result = photo_extract.extract_device_info(
-                images, list_options(get_db(), "equipment_category"), api_key=api_key)
+            if request.args.get("kind") == "chemicals":
+                result = photo_extract.extract_chemical_info(
+                    images, list_options(db, "chemical_unit"), list_options(db, "storage_group"),
+                    list_options(db, "hazard_class"), api_key=api_key)
+            else:
+                result = photo_extract.extract_device_info(
+                    images, list_options(db, "equipment_category"), api_key=api_key)
         except photo_extract.ExtractionError as e:
             return jsonify(error=str(e)), 400
         return jsonify(result)

@@ -243,6 +243,19 @@
     Object.keys(fields).forEach(function (name) {
       const el = form.elements[name];
       if (!el) return;
+      if (Array.isArray(fields[name])) {
+        // A set of checkboxes (e.g. chemical hazards): tick the ones the photo shows.
+        let ticked = false;
+        form.querySelectorAll('input[type=checkbox][name="' + name + '"]').forEach(function (box) {
+          if (fields[name].indexOf(box.value) >= 0 && !box.checked) {
+            box.checked = true;
+            (box.closest("label") || box).classList.add("autofilled");
+            ticked = true;
+          }
+        });
+        if (ticked) filled.push(name);
+        return;
+      }
       const current = el.value.trim();
       if (!current) {
         setField(name, fields[name]);

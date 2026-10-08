@@ -31,8 +31,14 @@ installer, photo/barcode reading and settings.
 - **History** of every change on every record.
 - **CSV export and import** for equipment, chemicals and textbook titles, plus a **copies import** that loads
   existing textbook copies (and who currently has them) from a spreadsheet.
-- **Fill from photos** on the equipment form: barcodes are read in the browser; with an Anthropic API key,
-  "Read label with AI" also reads the maker, model and serial number from the label.
+- **Fill from photos** on the equipment and chemical forms: barcodes are read in the browser; with an
+  Anthropic API key, **Read label with AI** also reads the printed label.
+  - Equipment: maker, model, model number and serial number.
+  - Chemicals (tuned for **Flinn Scientific** labels, works with other suppliers too): name, concentration,
+    CAS number, formula, amount and unit, catalog number, supplier, expiration date, hazard classes from the
+    GHS pictograms, and a storage group. The lot number and Flinn's storage code (e.g. "Inorganic #4") go in
+    the notes. If you rename your storage groups to Flinn's codes on the Lists page, the code on the label
+    picks the group directly.
 - **Phones**: turn on phone access in Settings and scan the QR code to use it from a phone on the same Wi-Fi.
 
 ## Download and run (no programming needed)

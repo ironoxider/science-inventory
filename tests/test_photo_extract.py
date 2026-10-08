@@ -180,3 +180,56 @@ def test_form_accepts_heic_photos(client):
     assert b'accept="image/*,.heic,.heif"' in page
     assert b"vendor/heic2any.min.js" in page
     assert client.get("/static/vendor/heic2any.min.js").status_code == 200
+
+
+UNITS = ["g", "mL", "L"]
+GROUPS = ["Inorganic: Acids", "Organic: Flammables"]
+HAZARDS = ["Flammable", "Corrosive", "Toxic", "Irritant"]
+FLINN_REPLY = {"name": "Hydrochloric Acid", "concentration": "6 M", "cas_number": "7647-01-0",
+               "formula": "HCl", "amount": 500, "unit": "mL", "storage_code": "Inorganic #10",
+               "storage_group": "Inorganic: Acids", "hazards": ["Corrosive", "Irritant", "Bogus"],
+               "expiration_date": "2029-05-31", "supplier": "Flinn Scientific",
+               "catalog_number": "H0034", "lot_number": "123456", "notes": None}
+
+
+def test_extract_chemical_flinn_label():
+    client = FakeClient(FLINN_REPLY)
+    result = photo_extract.extract_chemical_info([(b"x", "image/jpeg")], UNITS, GROUPS, HAZARDS,
+                                                 client)
+    assert result["fields"] == {
+        "name": "Hydrochloric Acid", "concentration": "6 M", "cas_number": "7647-01-0",
+        "formula": "HCl", "amount": "500", "unit": "mL", "storage_group": "Inorganic: Acids",
+        "hazards": ["Corrosive", "Irritant"], "expiration_date": "2029-05-31",
+        "supplier": "Flinn Scientific", "catalog_number": "H0034",
+        "notes": "Lot 123456. Storage code on label: Inorganic #10."}
+    schema = client.calls[0]["output_config"]["format"]["schema"]
+    assert schema["properties"]["hazards"]["items"]["enum"] == HAZARDS
+    assert "Flinn" in client.calls[0]["messages"][0]["content"][-1]["text"]
+
+
+def test_extract_chemical_uses_flinn_storage_code_list():
+    reply = dict(FLINN_REPLY, storage_code="inorganic  #10", lot_number=None, amount=None,
+                 unit="kg", expiration_date="soon")
+    fields = photo_extract.extract_chemical_info(
+        [(b"x", "image/jpeg")], UNITS, GROUPS + ["Inorganic #10"], HAZARDS,
+        FakeClient(reply))["fields"]
+    assert fields["storage_group"] == "Inorganic #10"
+    for missing in ("notes", "amount", "unit", "expiration_date"):
+        assert missing not in fields
+
+
+def test_api_extract_chemicals(client, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    seen = {}
+
+    def fake_extract(images, units, groups, hazards, api_key=None):
+        seen.update(units=units, groups=groups, hazards=hazards)
+        return {"fields": {"name": "Ethanol"}, "notes": None}
+
+    monkeypatch.setattr(photo_extract, "extract_chemical_info", fake_extract)
+    page = client.get("/chemicals/new").data
+    assert b"Read label with AI" in page and b"/api/extract?kind=chemicals" in page
+    resp = client.post("/api/extract?kind=chemicals", content_type="multipart/form-data",
+                       data={"photos": (io.BytesIO(b"img"), "label.jpg", "image/jpeg")})
+    assert resp.get_json()["fields"] == {"name": "Ethanol"}
+    assert "mL" in seen["units"] and "Corrosive" in seen["hazards"] and seen["groups"]

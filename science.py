@@ -121,7 +121,7 @@ CHEMICALS = Collection(
         },
     },
     cell_class=chemical_cell,
-    photo={"ai": False, "targets": [["catalog_number", "Catalog #"], ["cas_number", "CAS #"]]},
+    photo={"ai": True, "targets": [["catalog_number", "Catalog #"], ["cas_number", "CAS #"]]},
 )
 
 # ---------------------------------------------------------------- textbook titles

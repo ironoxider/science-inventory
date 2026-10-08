@@ -1,4 +1,4 @@
-"""Read device details (make, model, model number, serial) from photos using Claude.
+"""Read equipment and chemical labels from photos using Claude.
 
 Requires an Anthropic API key, saved on the Settings page or set in the
 ANTHROPIC_API_KEY environment variable.
@@ -19,8 +19,8 @@ MAX_IMAGE_BYTES = 5 * 1024 * 1024
 EXTRACT_FIELDS = ["manufacturer", "model", "model_number", "serial_number", "manufacture_date",
                   "category"]
 
-PROMPT = """These photos show an IT device and/or its identification label (the sticker \
-on the bottom, back, or inside the battery bay). Read the label and identify the device \
+PROMPT = """These photos show a piece of lab equipment or a device and/or its identification \
+label (the sticker or plate on the bottom, back, or inside the battery bay). Read the label and identify the device \
 so an inventory record can be filled in.
 
 Fields:
@@ -73,8 +73,8 @@ def is_configured(api_key=None):
     return bool(api_key or os.environ.get("ANTHROPIC_API_KEY"))
 
 
-def extract_device_info(images, categories, client=None, api_key=None):
-    """Return a dict of device fields read from `images`.
+def _ask(images, prompt, schema, client=None, api_key=None):
+    """Send the photos and prompt to Claude and return the parsed JSON answer.
 
     `images` is a list of (bytes, media_type) tuples.
     """
@@ -96,7 +96,7 @@ def extract_device_info(images, categories, client=None, api_key=None):
                 "data": base64.standard_b64encode(data).decode("ascii"),
             },
         })
-    content.append({"type": "text", "text": PROMPT})
+    content.append({"type": "text", "text": prompt})
 
     # With no saved key, the SDK falls back to the ANTHROPIC_API_KEY environment variable.
     client = client or anthropic.Anthropic(api_key=api_key or None, timeout=90.0)
@@ -108,7 +108,7 @@ def extract_device_info(images, categories, client=None, api_key=None):
             fallbacks="default",
             output_config={
                 "effort": "medium",
-                "format": {"type": "json_schema", "schema": output_schema(categories)},
+                "format": {"type": "json_schema", "schema": schema},
             },
             messages=[{"role": "user", "content": content}],
         )
@@ -133,15 +133,28 @@ def extract_device_info(images, categories, client=None, api_key=None):
     if not text:
         raise ExtractionError("The AI didn't return any details. Try a clearer photo.")
     try:
-        result = json.loads(text)
+        return json.loads(text)
     except json.JSONDecodeError:
         raise ExtractionError("The AI returned an unreadable answer. Try again.")
 
+
+def _strings(result, keys):
     fields = {}
-    for key in EXTRACT_FIELDS:
+    for key in keys:
         value = result.get(key)
         if isinstance(value, str) and value.strip():
             fields[key] = value.strip()
+    return fields
+
+
+def _notes(result):
+    return result.get("notes") if isinstance(result.get("notes"), str) else None
+
+
+def extract_device_info(images, categories, client=None, api_key=None):
+    """Return a dict of equipment fields read from `images` (see _ask)."""
+    result = _ask(images, PROMPT, output_schema(categories), client, api_key)
+    fields = _strings(result, EXTRACT_FIELDS)
     if fields.get("category") not in categories:
         fields.pop("category", None)
     if "manufacture_date" in fields:
@@ -151,5 +164,131 @@ def extract_device_info(images, categories, client=None, api_key=None):
                 raise ValueError
         except ValueError:
             fields.pop("manufacture_date")
-    notes = result.get("notes") if isinstance(result.get("notes"), str) else None
-    return {"fields": fields, "notes": notes}
+    return {"fields": fields, "notes": _notes(result)}
+
+
+# ---------------------------------------------------------------- chemical labels
+
+CHEMICAL_FIELDS = ["name", "concentration", "cas_number", "formula", "unit", "storage_group",
+                   "expiration_date", "supplier", "catalog_number"]
+
+CHEMICAL_PROMPT = """These photos show the label on a chemical bottle or jar in a school science \
+lab. Most come from Flinn Scientific, but some are from other suppliers (Carolina, Ward's, \
+Fisher, Sigma-Aldrich, etc.). Read the label so an inventory record can be filled in.
+
+Flinn labels usually show the chemical name, a catalog number made of one or more letters and \
+digits (e.g. "S0071", "H0034", "AP7146"), the amount in the bottle (e.g. "500 g", "100 mL"), \
+the formula, the CAS number, a lot number, GHS hazard pictograms and/or a "Hazard Alert", and \
+a "Flinn Suggested Chemical Storage Pattern" code such as "Inorganic #4" or "Organic #2". \
+Other suppliers show similar information in different places.
+
+Fields:
+- name: the chemical name as printed, without the concentration, e.g. "Hydrochloric Acid", \
+"Sodium Chloride", "Copper(II) Sulfate Pentahydrate". For a mixture or kit solution use its \
+product name.
+- concentration: concentration or grade, e.g. "6 M", "0.1 M", "3%", "95%", "Reagent", \
+"Laboratory Grade", "ACS". null if none is printed.
+- cas_number: CAS registry number, e.g. "7647-01-0". Copy it exactly.
+- formula: chemical formula as printed, e.g. "HCl", "CuSO4·5H2O".
+- amount: the quantity in this container as a number, e.g. 500 for "500 g". null if not printed.
+- unit: one of the allowed units that matches the amount (convert nothing; pick the unit printed).
+- storage_code: the supplier's storage code exactly as printed (e.g. "Inorganic #4", \
+"Organic #2", "Inorganic #1 - Flammable"). null if none is printed.
+- storage_group: the allowed storage group that best fits. Use the printed storage code and \
+hazards if there are any, otherwise the chemistry (acids, bases, oxidizers, flammable organics, \
+etc.). null if you aren't sure.
+- hazards: every allowed hazard class shown by the label's GHS pictograms or hazard \
+statements, e.g. flame -> Flammable, flame over circle -> Oxidizer, corrosion -> Corrosive, \
+skull and crossbones -> Toxic, health hazard (silhouette) -> Health Hazard, exclamation mark -> \
+Irritant, gas cylinder -> Compressed Gas, exploding bomb -> Explosive, environment -> \
+Environmental Hazard. Use ["Non-hazardous"] only if the label says it isn't hazardous; \
+[] if you can't tell.
+- expiration_date: expiration or "use by" date as YYYY-MM-DD (end of month if only month and \
+year are printed). null if none is printed; don't estimate a shelf life.
+- supplier: the company that sold it, e.g. "Flinn Scientific".
+- catalog_number: the supplier's catalog/product number (not the lot number, CAS number or UPC).
+- lot_number: the lot or batch number. null if none.
+
+Rules:
+- Only report text you can actually read. Use null for anything you can't read or aren't sure \
+of; a blank field is much better than a wrong CAS or catalog number.
+- If a character is ambiguous (0/O, 1/I, 5/S, 8/B), say which in notes.
+- notes: one short sentence about anything uncertain, or null if everything was clear."""
+
+
+def _enum_or_null(values):
+    if not values:
+        return {"type": "null"}
+    return {"anyOf": [{"type": "string", "enum": list(values)}, {"type": "null"}]}
+
+
+def chemical_schema(units, storage_groups, hazard_classes):
+    hazards = {"type": "array", "items": {"type": "string", "enum": list(hazard_classes)}} \
+        if hazard_classes else {"type": "array", "items": {"type": "string"}}
+    properties = {key: _nullable_string() for key in CHEMICAL_FIELDS + ["storage_code",
+                                                                       "lot_number", "notes"]}
+    properties.update({
+        "amount": {"type": ["number", "null"]},
+        "unit": _enum_or_null(units),
+        "storage_group": _enum_or_null(storage_groups),
+        "hazards": hazards,
+    })
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties),
+        "additionalProperties": False,
+    }
+
+
+def _same(a, b):
+    return " ".join(a.lower().split()) == " ".join(b.lower().split())
+
+
+def extract_chemical_info(images, units, storage_groups, hazard_classes, client=None,
+                          api_key=None):
+    """Return a dict of chemical fields read from the label in `images` (see _ask).
+
+    `hazards` comes back as a list. If the department names its storage groups after the
+    supplier's codes (e.g. "Inorganic #4"), the printed code picks the group directly.
+    """
+    result = _ask(images, CHEMICAL_PROMPT,
+                  chemical_schema(units, storage_groups, hazard_classes), client, api_key)
+    fields = _strings(result, CHEMICAL_FIELDS)
+    if fields.get("unit") not in units:
+        fields.pop("unit", None)
+
+    code = result.get("storage_code")
+    code = code.strip() if isinstance(code, str) and code.strip() else None
+    exact = next((g for g in storage_groups if code and _same(g, code)), None)
+    if exact:
+        fields["storage_group"] = exact
+    elif fields.get("storage_group") not in storage_groups:
+        fields.pop("storage_group", None)
+
+    amount = result.get("amount")
+    if isinstance(amount, (int, float)) and not isinstance(amount, bool) and amount > 0:
+        fields["amount"] = f"{amount:g}"
+
+    hazards = result.get("hazards") if isinstance(result.get("hazards"), list) else []
+    hazards = [h for h in hazard_classes if h in hazards]
+    if hazards:
+        fields["hazards"] = hazards
+
+    if "expiration_date" in fields:
+        try:
+            parsed = date.fromisoformat(fields["expiration_date"])
+            if not (1980 <= parsed.year <= date.today().year + 30):
+                raise ValueError
+        except ValueError:
+            fields.pop("expiration_date")
+
+    extra = []
+    lot = result.get("lot_number")
+    if isinstance(lot, str) and lot.strip():
+        extra.append(f"Lot {lot.strip()}.")
+    if code and not exact:
+        extra.append(f"Storage code on label: {code}.")
+    if extra:
+        fields["notes"] = " ".join(extra)
+    return {"fields": fields, "notes": _notes(result)}
