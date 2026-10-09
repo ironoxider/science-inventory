@@ -233,3 +233,13 @@ def test_api_extract_chemicals(client, monkeypatch):
                        data={"photos": (io.BytesIO(b"img"), "label.jpg", "image/jpeg")})
     assert resp.get_json()["fields"] == {"name": "Ethanol"}
     assert "mL" in seen["units"] and "Corrosive" in seen["hazards"] and seen["groups"]
+
+
+def test_admin_key_is_refused(client, monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    resp = client.post("/settings", data={"anthropic_api_key": "sk-ant-admin01-abc"},
+                       follow_redirects=True)
+    assert b"Admin API key" in resp.data and b"Read label with AI" not in client.get("/equipment/new").data
+    with pytest.raises(photo_extract.ExtractionError, match="Admin API key"):
+        photo_extract.extract_device_info([(b"x", "image/jpeg")], CATEGORIES,
+                                          FakeClient(LABEL_REPLY), api_key="sk-ant-admin01-abc")
